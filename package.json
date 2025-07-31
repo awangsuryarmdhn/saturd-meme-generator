@@ -1,0 +1,14 @@
+{
+  "name": "saturn-meme-generator-api",
+  "version": "1.0.0",
+  "description": "Serverless function for SATURD Meme Generator",
+  "main": "api/generate-image.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "form-data": "^4.0.0"
+  },
+  "type": "module"
+}
