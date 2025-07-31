@@ -30,7 +30,7 @@ function App() {
     }
   };
 
-  // Function to generate image using imagen-3.0-generate-002
+  // Function to generate image using gemini-2.0-flash-preview-image-generation
   const generateImage = async () => {
     if (!GOOGLE_API_KEY) {
       setError('API Key is missing. Please set REACT_APP_GOOGLE_API_KEY in your Vercel environment variables.');
@@ -43,10 +43,14 @@ function App() {
 
     try {
       const payload = {
-        instances: { prompt: prompt },
-        parameters: { "sampleCount": 1 }
+        contents: [{
+            parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE']
+        },
       };
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GOOGLE_API_KEY}`;
 
       const response = await fetchWithRetry(apiUrl, {
         method: 'POST',
@@ -56,8 +60,10 @@ function App() {
 
       const result = await response.json();
 
-      if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-        const generatedUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+      const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+      if (base64Data) {
+        const generatedUrl = `data:image/png;base64,${base64Data}`;
         setImageUrl(generatedUrl);
       } else {
         throw new Error('No image data received from the API.');
