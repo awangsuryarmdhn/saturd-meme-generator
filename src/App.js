@@ -6,6 +6,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Get API key from environment variable (for Vercel deployment)
+  // In a Create React App setup, environment variables must start with REACT_APP_
+  const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
+
   // Exponential backoff retry function for API calls
   const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
     try {
@@ -28,6 +32,11 @@ function App() {
 
   // Function to generate image using imagen-3.0-generate-002
   const generateImage = async () => {
+    if (!GOOGLE_API_KEY) {
+      setError('API Key is missing. Please set REACT_APP_GOOGLE_API_KEY in your Vercel environment variables.');
+      return;
+    }
+
     setError('');
     setImageUrl('');
     setLoading(true);
@@ -37,8 +46,7 @@ function App() {
         instances: { prompt: prompt },
         parameters: { "sampleCount": 1 }
       };
-      const apiKey = ""; // Canvas will automatically provide this at runtime
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`;
 
       const response = await fetchWithRetry(apiUrl, {
         method: 'POST',
@@ -56,151 +64,100 @@ function App() {
       }
     } catch (err) {
       console.error('Error generating image:', err);
-      setError(`Error generating image: ${err.message || 'Unknown error'}. Please try again.`);
+      setError(`Error generating image: ${err.message || 'Unknown error'}. Please ensure your API Key is valid and try again.`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 font-sans"
-         style={{ background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)' }}>
-      <div className="banner"
-           style={{
-             backgroundColor: '#9f7aea', // Purple background for the banner
-             boxShadow: '0 10px 20px rgba(0, 0, 0, 0.4)',
-             borderRadius: '15px',
-             width: '100%',
-             maxWidth: '700px',
-             padding: '20px 0',
-             marginBottom: '20px',
-             textAlign: 'center',
-             minHeight: '100px',
-             display: 'flex',
-             alignItems: 'center',
-             justifyContent: 'center',
-             position: 'relative',
-             overflow: 'hidden'
-           }}>
-        <span className="banner-text"
-              style={{
-                position: 'relative', zIndex: 1, fontSize: '2.5rem', fontWeight: 900,
-                letterSpacing: '2px', textTransform: 'uppercase', textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
-                color: 'white'
-              }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 font-sans bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100">
+
+      {/* Banner Section */}
+      <div className="w-full max-w-2xl bg-gradient-to-r from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-xl mb-8 text-center transform hover:scale-105 transition-transform duration-300">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
           SATURD MEME GENERATOR
-        </span>
+        </h1>
+        <p className="mt-2 text-purple-200 text-lg sm:text-xl font-medium">Unleash your cosmic humor!</p>
       </div>
 
-      <div className="container"
-           style={{
-             backgroundColor: 'rgba(30, 41, 59, 0.9)',
-             borderRadius: '20px',
-             boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
-             padding: '40px',
-             textAlign: 'center',
-             maxWidth: '650px',
-             width: '100%',
-             display: 'flex',
-             flexDirection: 'column',
-             alignItems: 'center',
-             border: '1px solid rgba(71, 85, 105, 0.5)',
-             color: '#e2e8f0'
-           }}>
-        <p className="description" style={{ color: '#a0aec0', marginBottom: '2rem', fontSize: '1.1rem' }}>
-          Unleash your creativity! Enter your desired meme image description below, then click 'Generate Meme'.
+      {/* Main Content Container */}
+      <div className="w-full max-w-2xl bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 flex flex-col items-center">
+        <p className="text-gray-300 mb-6 text-center text-lg leading-relaxed">
+          Describe the meme image you want to create. Be creative and specific!
         </p>
 
         <textarea
-          id="promptInput"
-          className="prompt-input"
+          className="w-full p-4 mb-6 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 text-base resize-y min-h-[100px]"
+          rows="4"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Example: 'The planet Saturn with its rings, but the planet is a smiling cartoon turd, floating in space with stars in the background. Make it look like a classic internet meme poster.'"
-          style={{
-            width: '100%', padding: '15px', marginBottom: '25px', border: '1px solid #4a5568',
-            borderRadius: '10px', fontSize: '1.05rem', backgroundColor: '#2d3748', color: '#e2e8f0',
-            boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.2)', resize: 'vertical', minHeight: '80px',
-            transition: 'border-color 0.3s ease, box-shadow 0.3s ease'
-          }}
+          placeholder="Example: 'A grumpy cat wearing a tiny astronaut helmet, floating next to a planet that looks like a giant, smiling potato, with a galaxy background.'"
         ></textarea>
 
         <button
           onClick={generateImage}
           disabled={loading || !prompt.trim()}
-          className={`button-primary focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
-          style={{
-            background: loading || !prompt.trim() ? 'linear-gradient(90deg, #667eea80 0%, #7e5bef80 100%)' : 'linear-gradient(90deg, #667eea 0%, #7e5bef 100%)',
-            color: 'white', fontWeight: 'bold', padding: '14px 28px', borderRadius: '10px',
-            boxShadow: '0 5px 15px rgba(0, 0, 0, 0.2)', transition: 'all 0.3s ease', transform: 'translateY(0)',
-            cursor: loading || !prompt.trim() ? 'not-allowed' : 'pointer'
-          }}
+          className={`w-full py-3 px-6 rounded-xl text-white font-bold text-lg shadow-lg transform active:scale-95 transition-all duration-200
+            ${loading || !prompt.trim()
+              ? 'bg-gradient-to-r from-blue-400 to-indigo-400 cursor-not-allowed opacity-70'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800'
+            }`}
         >
-          {loading ? 'Generating...' : 'Generate Meme'}
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Generating Meme...
+            </span>
+          ) : (
+            'Generate Meme'
+          )}
         </button>
 
-        {loading && (
-          <div className="loading-spinner" style={{ display: 'block', margin: '25px auto', borderLeftColor: '#667eea' }}></div>
-        )}
         {error && (
-          <p className="error-message" style={{ color: '#fca5a5', marginTop: '20px', fontSize: '1rem', fontWeight: '500' }}>
-            {error}
-          </p>
+          <div className="mt-6 p-4 bg-red-800 border border-red-600 text-red-200 rounded-lg text-sm w-full text-center shadow-md">
+            <p className="font-semibold mb-1">Error:</p>
+            <p>{error}</p>
+            {error.includes("API Key is missing") && (
+              <p className="mt-2 text-xs">
+                Please ensure you have set the `REACT_APP_GOOGLE_API_KEY` environment variable in Vercel.
+              </p>
+            )}
+          </div>
         )}
 
         {imageUrl && (
-          <img
-            id="memeImage"
-            className="meme-image"
-            src={imageUrl}
-            alt="Generated Meme"
-            style={{
-              maxWidth: '100%', height: 'auto', borderRadius: '12px', marginTop: '30px',
-              border: '2px solid #667eea', boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)'
-            }}
-            onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/512x512/E0E0E0/808080?text=Image+Load+Error"; setError('Failed to load generated image. Please try again.'); }}
-          />
+          <div className="mt-8 w-full text-center">
+            <h2 className="text-2xl font-semibold text-gray-100 mb-4">Your Generated Meme:</h2>
+            <img
+              src={imageUrl}
+              alt="Generated Meme"
+              className="max-w-full h-auto rounded-xl shadow-xl border-2 border-indigo-500 mx-auto"
+              onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/512x512/374151/D1D5DB?text=Image+Load+Error"; setError('Failed to load generated image. Please try again.'); }}
+            />
+          </div>
         )}
 
-        <div className="buy-link-section"
-             style={{
-               marginTop: '30px', paddingTop: '20px', borderTop: '1px solid rgba(71, 85, 105, 0.3)',
-               width: '100%', color: '#a0aec0'
-             }}>
-          <p className="text-gray-400 mb-4">Like this project? Support us by checking out our token!</p>
-          <a href="https://jup.ag/tokens/AxJvMQKoFX1aPU8iSrKVYn8iTNZjrhAQDsDAnBWUjups" target="_blank"
-             className="buy-button"
-             style={{
-               backgroundColor: '#00b0ff', color: 'white', fontWeight: 'bold', padding: '12px 25px',
-               borderRadius: '8px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)', transition: 'all 0.3s ease',
-               textDecoration: 'none', display: 'inline-block'
-             }}>
+        {/* Token Link Section */}
+        <div className="mt-10 pt-6 border-t border-gray-700 w-full text-center">
+          <p className="text-gray-400 mb-4 text-base">
+            Like this project? Support us by checking out our token!
+          </p>
+          <a
+            href="https://jup.ag/tokens/AxJvMQKoFX1aPU8iSrKVYn8iTNZjrhAQDsDAnBWUjups"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+          >
             Buy Here on Jup.ag
           </a>
         </div>
       </div>
-
-      {/* Tailwind CSS classes for animations and base styles (hidden by React inline styles) */}
-      <style>
-        {`
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: #667eea; /* Blue-purple spinner */
-            border-radius: 50%;
-            width: 40px; /* Slightly larger spinner */
-            height: 40px;
-            animation: spin 1s linear infinite;
-            display: none; /* Controlled by React state */
-        }
-        `}
-      </style>
     </div>
   );
 }
 
 export default App;
-               
